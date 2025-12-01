@@ -88,12 +88,23 @@ if os.environ.get('DATABASE_URL'):
         )
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+    # Check if sqlite3 is available (it's often missing on Vercel)
+    try:
+        import sqlite3
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
         }
-    }
+    except ImportError:
+        # Fallback for build environments without sqlite (like Vercel)
+        # This allows collectstatic to run without a DB
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.dummy',
+            }
+        }
 
 
 # Password validation
