@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan QR Code{% endblock %}
+
+{% block extra_css %}
+<style>
+    .scan-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    #qr-reader {
+        width: 100%;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+    }
+
+    .success-animation {
+        animation: pulse 0.5s ease-in-out;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container scan-container py-4">
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% else %}
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white text-center">
+            <h4 class="mb-0"><i class="bi bi-qr-code-scan"></i> Mark Attendance</h4>
+        </div>
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <h5>{{ session.title }}</h5>
+                <p class="text-muted">
+                    <i class="bi bi-door-open"></i> {{ session.classroom.name }}<br>
+                    <i class="bi bi-calendar"></i> {{ session.session_date }}
+                </p>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div id="messageContainer"></div>
+
+            <!-- QR Scanner -->
+            <div class="mb-4">
+                <h6>Option 1: Scan with Camera</h6>
+                <div id="qr-reader"></div>
+                <div class="text-center mt-2">
+                    <button id="startScanBtn" class="btn btn-primary">
+                        <i class="bi bi-camera"></i> Start Camera
+                    </button>
+                    <button id="stopScanBtn" class="btn btn-secondary d-none">
+                        <i class="bi bi-stop-circle"></i> Stop Camera
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center my-3">
+                <strong>OR</strong>
+            </div>
+
+            <!-- Manual Entry Form -->
+            <div>
+                <h6>Option 2: Enter Student ID Manually</h6>
+                <form id="manualForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="student_id" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="student_id" name="student_id"
+                            placeholder="Enter your student ID" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Mark Attendance
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- HTML5 QR Code Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+    const token = "{{ token }}";
+    const scanUrl = `/scan/${token}/`;
+    let html5QrCode = null;
+
+    // Show message
+    function showMessage(message, type = 'success') {
+        const container = document.getElementById('messageContainer');
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-triangle';
+
+        container.innerHTML = `
+        <div class="alert ${alertClass} success-animation">
+            <i class="bi bi-${icon}"></i> ${message}
+        </div>
+    `;
+
+        if (type === 'success') {
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+    }
+
+    // Mark attendance
+    function markAttendance(studentId) {
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(scanUrl, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`✓ Attendance marked for ${data.student}!`, 'success');
+                    document.getElementById('student_id').value = '';
+                } else {
+                    showMessage(data.error || 'Failed to mark attendance', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Network error. Please try again.', 'error');
+            });
+    }
+
+    // Manual form submission
+    document.getElementById('manualForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const studentId = document.getElementById('student_id').value;
+        markAttendance(studentId);
+    });
+
+    // QR Code Scanner
+    document.getElementById('startScanBtn').addEventListener('click', function () {
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("qr-reader");
+        }
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            (decodedText, decodedResult) => {
+                // QR code detected
+                console.log(`QR Code detected: ${decodedText}`);
+
+                // If the QR contains a student ID, mark attendance
+                // This is a simple implementation - adjust based on your QR format
+                if (decodedText.includes('/scan/')) {
+                    // It's a session URL, do nothing (already on this page)
+                    showMessage('Please enter your student ID below', 'error');
+                } else {
+                    // Assume it's a student ID
+                    markAttendance(decodedText);
+                }
+            },
+            (errorMessage) => {
+                // Scanning errors (can be ignored)
+            }
+        ).then(() => {
+            document.getElementById('startScanBtn').classList.add('d-none');
+            document.getElementById('stopScanBtn').classList.remove('d-none');
+        }).catch(err => {
+            showMessage('Unable to access camera. Please use manual entry.', 'error');
+        });
+    });
+
+    document.getElementById('stopScanBtn').addEventListener('click', function () {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('startScanBtn').classList.remove('d-none');
+                document.getElementById('stopScanBtn').classList.add('d-none');
+            });
+        }
+    });
+</script>
+{% endblock %}

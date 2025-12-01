@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        {% if student.photo %}
+                        <img src="{{ student.photo.url }}" alt="Profile"
+                            class="rounded-circle border border-3 border-white me-3"
+                            style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center me-3"
+                            style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="mb-0">Welcome, {{ student.name }}!</h2>
+                            <p class="mb-0 opacity-75">Student ID: {{ student.student_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-primary mb-2">{{ total_attendance }}</div>
+                    <div class="text-muted">Total Classes Attended</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">{{ attendance_percentage }}%</div>
+                    <div class="text-muted">Attendance Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Sessions (Your Enrolled Classes) -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-calendar-check text-primary me-2"></i> Active Sessions (Your Classes)</h5>
+        </div>
+        <div class="card-body">
+            {% if active_sessions %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>How to mark attendance:</strong> Click "Scan QR Code" below, then point your camera at the QR
+                code displayed in your classroom.
+            </div>
+
+            <button class="btn btn-lg btn-primary w-100 mb-4" onclick="startQRScanner()">
+                <i class="bi bi-camera me-2"></i> Scan QR Code to Mark Attendance
+            </button>
+
+            <h6 class="text-muted mb-3">Your Active Sessions:</h6>
+            {% for session in active_sessions %}
+            <div class="card mb-3 border-start border-primary border-4">
+                <div class="card-body">
+                    <h6 class="card-title">{{ session.title }}</h6>
+                    <p class="card-text mb-2">
+                        <i class="bi bi-door-open me-2"></i>{{ session.classroom.name }}<br>
+                        <i class="bi bi-person me-2"></i>{{ session.teacher.user.get_full_name }}<br>
+                        <i class="bi bi-calendar me-2"></i>{{ session.session_date|date:"M d, Y" }}
+                    </p>
+                    <span class="badge bg-success">Active Now</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                <p>No active sessions in your enrolled classrooms right now.</p>
+                <small>Active sessions will appear here when your teacher starts a session.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Attendance History -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-clock-history text-primary me-2"></i> Recent Attendance</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Session</th>
+                            <th>Classroom</th>
+                            <th>Teacher</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_records %}
+                        <tr>
+                            <td>{{ record.marked_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ record.session.title }}</td>
+                            <td>{{ record.session.classroom.name }}</td>
+                            <td>{{ record.session.teacher.user.get_full_name }}</td>
+                            <td><span class="badge bg-success">Present</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                                No attendance records yet. Scan a QR code to mark your first attendance!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera me-2"></i>Scan QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopQRScanner()"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reader" style="width: 100%;"></div>
+                <div id="scan-result" class="mt-3"></div>
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Point your camera at the QR code displayed in your classroom.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    onclick="stopQRScanner()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let html5QrCode;
+    let scannerModal;
+
+    function startQRScanner() {
+        scannerModal = new bootstrap.Modal(document.getElementById('qrScannerModal'));
+        scannerModal.show();
+
+        html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            onScanSuccess,
+            onScanError
+        ).catch(err => {
+            document.getElementById('scan-result').innerHTML =
+                `<div class="alert alert-danger">
+                <strong>Camera Error:</strong> ${err}. Please allow camera access.
+            </div>`;
+        });
+    }
+
+    function stopQRScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+            }).catch(err => {
+                console.error("Error stopping scanner:", err);
+            });
+        }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // Extract token from scanned URL
+        console.log("Scanned:", decodedText);
+
+        // The QR code contains a URL like: http://127.0.0.1:8000/scan/TOKEN/
+        const urlParts = decodedText.split('/');
+        const tokenIndex = urlParts.indexOf('scan') + 1;
+        const scannedToken = urlParts[tokenIndex];
+
+        if (!scannedToken) {
+            document.getElementById('scan-result').innerHTML =
+                `<div class="alert alert-danger">Invalid QR code. Please scan a valid attendance QR code.</div>`;
+            return;
+        }
+
+        // Stop scanner
+        html5QrCode.pause();
+
+        // Show loading
+        document.getElementById('scan-result').innerHTML =
+            `<div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Marking attendance...
+        </div>`;
+
+        // Mark attendance
+        fetch(`/scan/${scannedToken}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                student_id: '{{ student.student_id }}'
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('scan-result').innerHTML =
+                        `<div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <strong>Success!</strong> ${data.message}
+                </div>`;
+
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    document.getElementById('scan-result').innerHTML =
+                        `<div class="alert alert-danger">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <strong>Error:</strong> ${data.error}
+                </div>`;
+
+                    // Resume scanner
+                    setTimeout(() => {
+                        html5QrCode.resume();
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                document.getElementById('scan-result').innerHTML =
+                    `<div class="alert alert-danger">
+                <strong>Network Error:</strong> ${error}
+            </div>`;
+
+                // Resume scanner
+                setTimeout(() => {
+                    html5QrCode.resume();
+                }, 3000);
+            });
+    }
+
+    function onScanError(errorMessage) {
+        // Ignore scan errors (they happen continuously while scanning)
+    }
+
+    // Cleanup on modal close
+    document.getElementById('qrScannerModal').addEventListener('hidden.bs.modal', function () {
+        stopQRScanner();
+    });
+</script>
+{% endblock %}

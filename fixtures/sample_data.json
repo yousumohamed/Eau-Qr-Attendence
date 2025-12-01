@@ -1,0 +1,148 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "admin",
+      "password": "pbkdf2_sha256$600000$admin$password",
+      "is_superuser": true,
+      "is_staff": true,
+      "is_active": true,
+      "first_name": "Admin",
+      "last_name": "User",
+      "email": "admin@example.com",
+      "date_joined": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "teacher1",
+      "password": "pbkdf2_sha256$600000$teacher1$password",
+      "is_superuser": false,
+      "is_staff": true,
+      "is_active": true,
+      "first_name": "John",
+      "last_name": "Smith",
+      "email": "john.smith@example.com",
+      "date_joined": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.teacher",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "employee_id": "EMP001",
+      "department": "Computer Science",
+      "phone": "+1234567890",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.classroom",
+    "pk": 1,
+    "fields": {
+      "name": "Room 101",
+      "building": "Main Building",
+      "capacity": 30,
+      "location": "First Floor",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.classroom",
+    "pk": 2,
+    "fields": {
+      "name": "Lab A",
+      "building": "Science Block",
+      "capacity": 25,
+      "location": "Second Floor",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.classroom",
+    "pk": 3,
+    "fields": {
+      "name": "Auditorium",
+      "building": "Main Building",
+      "capacity": 100,
+      "location": "Ground Floor",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.student",
+    "pk": 1,
+    "fields": {
+      "student_id": "STU001",
+      "name": "Alice Johnson",
+      "email": "alice.johnson@student.example.com",
+      "enrollment_date": "2024-09-01",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.student",
+    "pk": 2,
+    "fields": {
+      "student_id": "STU002",
+      "name": "Bob Williams",
+      "email": "bob.williams@student.example.com",
+      "enrollment_date": "2024-09-01",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.student",
+    "pk": 3,
+    "fields": {
+      "student_id": "STU003",
+      "name": "Carol Davis",
+      "email": "carol.davis@student.example.com",
+      "enrollment_date": "2024-09-01",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.student",
+    "pk": 4,
+    "fields": {
+      "student_id": "STU004",
+      "name": "David Martinez",
+      "email": "david.martinez@student.example.com",
+      "enrollment_date": "2024-09-01",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "attendance.student",
+    "pk": 5,
+    "fields": {
+      "student_id": "STU005",
+      "name": "Emma Garcia",
+      "email": "emma.garcia@student.example.com",
+      "enrollment_date": "2024-09-01",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]

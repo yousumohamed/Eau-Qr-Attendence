@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ session.title }} - QR Code{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-container {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .qr-code-display {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .attendance-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- QR Code Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="qr-container text-center">
+                <h3>{{ session.title }}</h3>
+                <p class="text-muted">
+                    <i class="bi bi-door-open"></i> {{ session.classroom.name }}<br>
+                    <i class="bi bi-calendar"></i> {{ session.session_date }}
+                </p>
+
+                <div class="qr-code-display my-4">
+                    <img src="/api/sessions/{{ session.pk }}/qr_code/" alt="QR Code" class="img-fluid border p-2">
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Students scan this QR code to mark attendance
+                </div>
+
+                <div class="mb-3">
+                    <strong>Scan URL:</strong><br>
+                    <small class="text-muted">{{ qr_url }}</small>
+                </div>
+
+                {% if session.is_active %}
+                <div class="alert alert-success">
+                    <i class="bi bi-circle-fill"></i> Session is Active
+                </div>
+                <p class="text-muted">Expires: {{ session.expires_at|date:"M d, Y H:i" }}</p>
+
+                <form method="post" action="/api/sessions/{{ session.pk }}/close/">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Close Session
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-secondary">
+                    <i class="bi bi-x-circle"></i> Session Closed
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Attendance List Section -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people"></i> Attendance
+                        <span class="badge bg-light text-dark">{{ attendance_count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body attendance-list">
+                    {% if attendance_records %}
+                    <div class="list-group">
+                        {% for record in attendance_records %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ record.student.name }}</h6>
+                                    <small class="text-muted">{{ record.student.student_id }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ record.marked_at|date:"H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-4"></i>
+                        <p class="mt-3">No attendance marked yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-outline-primary w-100" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh attendance every 10 seconds
+    setInterval(function () {
+        location.reload();
+    }, 10000);
+</script>
+{% endblock %}
