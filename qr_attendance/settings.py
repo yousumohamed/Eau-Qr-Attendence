@@ -78,11 +78,13 @@ WSGI_APPLICATION = 'qr_attendance.wsgi.application'
 import os
 import dj_database_url
 
-# Use PostgreSQL in production, SQLite in development
-if os.environ.get('DATABASE_URL'):
+# Use PostgreSQL in production (supports DATABASE_URL or POSTGRES_URL)
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
+if database_url:
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=database_url,
             conn_max_age=600,
             conn_health_checks=True,
         )
