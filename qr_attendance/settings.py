@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'attendance.middleware.DatabaseCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'qr_attendance.urls'
@@ -78,6 +79,9 @@ WSGI_APPLICATION = 'qr_attendance.wsgi.application'
 import os
 import dj_database_url
 
+# Detect if running on Vercel
+IS_VERCEL = os.environ.get('VERCEL', False)
+
 # Use PostgreSQL in production (supports DATABASE_URL or POSTGRES_URL)
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 
@@ -89,24 +93,22 @@ if database_url:
             conn_health_checks=True,
         )
     }
+elif IS_VERCEL:
+    # On Vercel without a database - use dummy backend for builds only
+    # This will allow collectstatic to work but will fail on actual requests
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.dummy',
+        }
+    }
 else:
-    # Check if sqlite3 is available (it's often missing on Vercel)
-    try:
-        import sqlite3
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
+    # Local development - use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
-    except ImportError:
-        # Fallback for build environments without sqlite (like Vercel)
-        # This allows collectstatic to run without a DB
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.dummy',
-            }
-        }
+    }
 
 
 # Password validation
