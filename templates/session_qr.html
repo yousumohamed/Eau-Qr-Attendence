@@ -63,7 +63,8 @@
                 </div>
                 <p class="text-muted">Expires: {{ session.expires_at|date:"M d, Y H:i" }}</p>
 
-                <form method="post" action="/api/sessions/{{ session.pk }}/close/">
+                <form method="post" action="/api/sessions/{{ session.pk }}/close/" class="close-session-form"
+                    data-session-id="{{ session.pk }}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-x-circle"></i> Close Session
@@ -79,11 +80,11 @@
 
         <!-- Attendance List Section -->
         <div class="col-lg-6">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-people"></i> Attendance
-                        <span class="badge bg-light text-dark">{{ attendance_count }}</span>
+                    <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-people"></i> Present Students</span>
+                        <span class="badge bg-light text-dark">{{ attendance_count }}/{{ total_class_size }}</span>
                     </h5>
                 </div>
                 <div class="card-body attendance-list">
@@ -112,6 +113,37 @@
                     </div>
                     {% endif %}
                 </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-person-x text-danger"></i> Absent Students
+                        <span class="badge bg-danger ms-1">
+                            {{ absent_count }}
+                        </span>
+                    </h6>
+                </div>
+                <div class="card-body attendance-list">
+                    {% if absent_students %}
+                    <div class="list-group">
+                        {% for s in absent_students %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ s.name }}</h6>
+                                <small class="text-muted">{{ s.student_id }}</small>
+                            </div>
+                            <span class="badge bg-outline-secondary border">Absent</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <p class="mt-2 mb-0">Everyone in this class is present 🎉</p>
+                    </div>
+                    {% endif %}
+                </div>
                 <div class="card-footer">
                     <button class="btn btn-outline-primary w-100" onclick="location.reload()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -129,5 +161,41 @@
     setInterval(function () {
         location.reload();
     }, 10000);
+
+    // Close session via fetch to avoid JSON response screen
+    const closeForm = document.querySelector('.close-session-form');
+    if (closeForm) {
+        closeForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const actionUrl = this.getAttribute('action');
+            const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Closing...';
+
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to close session');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Unable to close session. Please try again.');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="bi bi-x-circle"></i> Close Session';
+                });
+        });
+    }
 </script>
 {% endblock %}

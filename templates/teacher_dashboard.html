@@ -5,61 +5,175 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2><i class="bi bi-speedometer2"></i> Teacher Dashboard</h2>
-            <p class="text-muted">Manage your attendance sessions</p>
+    <!-- Header + Stats -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 class="mb-1"><i class="bi bi-speedometer2 me-2"></i>Teacher Dashboard</h2>
+            <p class="text-muted mb-0">Create QR sessions, monitor attendance, and track your classes in real time.</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createSessionModal">
+                <i class="bi bi-plus-circle me-1"></i> Create New Session
+            </button>
         </div>
     </div>
 
-    <!-- Create Session Button -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createSessionModal">
-                <i class="bi bi-plus-circle"></i> Create New Session
-            </button>
+    <!-- Stats cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted text-uppercase">Total Students</small>
+                            <h4 class="mb-0 mt-1">{{ total_students_in_classes }}</h4>
+                        </div>
+                        <span class="text-primary fs-3"><i class="bi bi-people-fill"></i></span>
+                    </div>
+                    <small class="text-muted">Across your active classrooms</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted text-uppercase">Active Sessions</small>
+                            <h4 class="mb-0 mt-1">{{ active_sessions|length }}</h4>
+                        </div>
+                        <span class="text-success fs-3"><i class="bi bi-broadcast-pin"></i></span>
+                    </div>
+                    <small class="text-muted">Currently open for scanning</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted text-uppercase">Today’s Sessions</small>
+                            <h4 class="mb-0 mt-1">{{ todays_sessions_count }}</h4>
+                        </div>
+                        <span class="text-warning fs-3"><i class="bi bi-calendar-event"></i></span>
+                    </div>
+                    <small class="text-muted">Sessions scheduled for today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted text-uppercase">Total Sessions</small>
+                            <h4 class="mb-0 mt-1">{{ total_sessions_count }}</h4>
+                        </div>
+                        <span class="text-info fs-3"><i class="bi bi-clipboard-check"></i></span>
+                    </div>
+                    <small class="text-muted">All sessions you have created</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <a href="{% url 'reports' %}" class="card h-100 shadow-sm text-decoration-none text-reset">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center me-3"
+                        style="width: 56px; height: 56px;">
+                        <i class="bi bi-file-earmark-bar-graph fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Attendance Reports</h5>
+                        <p class="mb-0 text-muted small">Filter, export, and analyze class attendance.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'teacher_students' %}" class="card h-100 shadow-sm text-decoration-none text-reset">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center me-3"
+                        style="width: 56px; height: 56px;">
+                        <i class="bi bi-people fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">My Students</h5>
+                        <p class="mb-0 text-muted small">View classroom rosters and student profiles.</p>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 
     <!-- Active Sessions -->
     <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0"><i class="bi bi-activity me-2 text-success"></i>Active Sessions</h4>
+            <small class="text-muted">Students can scan QR codes only while the session is active.</small>
+        </div>
         <div class="col-12">
-            <h4><i class="bi bi-activity"></i> Active Sessions</h4>
             <div class="row">
                 {% for session in active_sessions %}
                 <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card border-success">
-                        <div class="card-header bg-success text-white">
-                            <i class="bi bi-circle-fill text-white"></i> Active
+                    <div class="card border-success session-card"
+                        data-classroom="{{ session.classroom.name }}"
+                        data-expires="{{ session.expires_at|date:'c' }}">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-circle-fill text-white me-1"></i>Active</span>
+                            <small class="text-white-50"><i class="bi bi-clock-history me-1"></i><span
+                                    class="session-remaining">Calculating…</span></small>
                         </div>
                         <div class="card-body">
-                            <h5 class="card-title">{{ session.title }}</h5>
-                            <p class="card-text">
-                                <i class="bi bi-door-open"></i> {{ session.classroom.name }}<br>
-                                <i class="bi bi-calendar"></i> {{ session.session_date }}<br>
-                                <i class="bi bi-people"></i> {{ session.attendance_count }} students
+                            <h5 class="card-title mb-1">{{ session.title }}</h5>
+                            <p class="card-text small mb-2 text-muted">
+                                <i class="bi bi-door-open me-1"></i>{{ session.classroom.name }}<br>
+                                <i class="bi bi-calendar me-1"></i>{{ session.session_date }}<br>
                             </p>
-                            <div class="d-grid gap-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-person-check me-1"></i>{{ session.attendance_count }} Present
+                                </span>
+                                <span class="badge bg-light text-dark">
+                                    <i class="bi bi-people me-1"></i>{{ session.classroom_size }} Total
+                                </span>
+                            </div>
+                            <p class="small mb-0">
+                                <span class="text-success fw-semibold">
+                                    {{ session.attendance_count }} present
+                                </span>
+                                /
+                                <span class="text-danger fw-semibold">
+                                    {{ session.absent_count }} absent
+                                </span>
+                            </p>
+                            <div class="d-grid gap-2 mt-3">
                                 <a href="{% url 'session_qr' session.pk %}" class="btn btn-primary">
-                                    <i class="bi bi-qr-code"></i> View QR Code
+                                    <i class="bi bi-qr-code me-1"></i> View QR & Attendance
                                 </a>
-                                <form method="post" action="/api/sessions/{{ session.pk }}/close/" class="d-inline">
+                                <form method="post" action="/api/sessions/{{ session.pk }}/close/"
+                                    class="d-inline close-session-form" data-session-id="{{ session.pk }}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-outline-danger w-100">
-                                        <i class="bi bi-x-circle"></i> Close Session
+                                        <i class="bi bi-x-circle me-1"></i> Close Session
                                     </button>
                                 </form>
                             </div>
                         </div>
-                        <div class="card-footer text-muted">
-                            Expires: {{ session.expires_at|date:"M d, Y H:i" }}
+                        <div class="card-footer text-muted small">
+                            Expires at: {{ session.expires_at|date:"M d, Y H:i" }}
                         </div>
                     </div>
                 </div>
                 {% empty %}
                 <div class="col-12">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> No active sessions. Create one to get started!
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-1"></i>No active sessions. Click
+                        <strong>Create New Session</strong> to start one for your class.
                     </div>
                 </div>
                 {% endfor %}
@@ -67,12 +181,23 @@
         </div>
     </div>
 
-    <!-- Recent Sessions -->
+    <!-- Recent Sessions + quick filter -->
     <div class="row">
+        <div class="col-12 d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <h4 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h4>
+            <div class="d-flex align-items-center gap-2">
+                <label class="me-1 text-muted small mb-0"><i class="bi bi-funnel"></i> Filter by classroom:</label>
+                <select id="classroomFilter" class="form-select form-select-sm" style="min-width: 200px;">
+                    <option value="">All classrooms</option>
+                    {% for classroom in classrooms %}
+                    <option value="{{ classroom.name }}">{{ classroom.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
         <div class="col-12">
-            <h4><i class="bi bi-clock-history"></i> Recent Sessions</h4>
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped table-hover align-middle" id="sessionsTable">
                     <thead>
                         <tr>
                             <th>Title</th>
@@ -80,13 +205,16 @@
                             <th>Date</th>
                             <th>Status</th>
                             <th>Attendance</th>
-                            <th>Actions</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for session in sessions %}
-                        <tr>
-                            <td>{{ session.title }}</td>
+                        <tr data-classroom="{{ session.classroom.name }}">
+                            <td>
+                                <span class="fw-semibold">{{ session.title }}</span><br>
+                                <small class="text-muted">Created {{ session.created_at|date:"M d, Y H:i" }}</small>
+                            </td>
                             <td>{{ session.classroom.name }}</td>
                             <td>{{ session.session_date }}</td>
                             <td>
@@ -96,16 +224,21 @@
                                 <span class="badge bg-secondary">Closed</span>
                                 {% endif %}
                             </td>
-                            <td>{{ session.attendance_count }}</td>
                             <td>
+                                <span class="badge bg-primary me-1">{{ session.attendance_count }} present</span>
+                                <span class="badge bg-outline-secondary border">
+                                    {{ session.absent_count }} absent
+                                </span>
+                            </td>
+                            <td class="text-end">
                                 <a href="{% url 'session_qr' session.pk %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-qr-code"></i> View
+                                    <i class="bi bi-qr-code me-1"></i> Details
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted">No sessions yet</td>
+                            <td colspan="6" class="text-center text-muted py-4">No sessions yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -147,6 +280,18 @@
                         <label for="session_date" class="form-label">Session Date</label>
                         <input type="date" class="form-control" id="session_date" name="session_date" required>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="session_start_time" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="session_start_time" name="session_start_time"
+                                required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="session_duration" class="form-label">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="session_duration" name="session_duration"
+                                value="60" min="5" max="300" step="5" required>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -160,19 +305,42 @@
 
 {% block extra_js %}
 <script>
-    // Set today's date as default
-    document.getElementById('session_date').valueAsDate = new Date();
+    // Set today's date and default start time when modal opens
+    const dateInput = document.getElementById('session_date');
+    const timeInput = document.getElementById('session_start_time');
+    if (dateInput && timeInput) {
+        const now = new Date();
+        dateInput.valueAsDate = now;
+        timeInput.value = now.toISOString().slice(11, 16); // HH:MM
+    }
 
-    // Handle form submission
+    // Handle session creation with explicit expires_at
     document.getElementById('createSessionForm').addEventListener('submit', function (e) {
         e.preventDefault();
 
         const formData = new FormData(this);
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const classroom = parseInt(formData.get('classroom'));
+        const sessionDate = formData.get('session_date');
+        const startTime = formData.get('session_start_time');
+        const durationMinutes = parseInt(formData.get('session_duration') || '60', 10);
+
+        if (!sessionDate || !startTime || !durationMinutes) {
+            alert('Please fill in date, start time and duration.');
+            return;
+        }
+
+        // Build start and end datetimes in local timezone then to ISO
+        const startDateTime = new Date(sessionDate + 'T' + startTime);
+        const expiresDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+
         const data = {
-            title: formData.get('title'),
-            description: formData.get('description'),
-            classroom: parseInt(formData.get('classroom')),
-            session_date: formData.get('session_date')
+            title: title,
+            description: description,
+            classroom: classroom,
+            session_date: sessionDate,
+            expires_at: expiresDateTime.toISOString()
         };
 
         fetch('/api/sessions/', {
@@ -187,11 +355,100 @@
             .then(data => {
                 if (data.id) {
                     window.location.href = '/session/' + data.id + '/qr/';
+                } else if (data.detail) {
+                    alert('Error creating session: ' + data.detail);
+                } else {
+                    alert('Could not create session. Please check your inputs.');
                 }
             })
             .catch(error => {
                 alert('Error creating session: ' + error);
             });
+    });
+
+    // Countdown for remaining time on active session cards
+    function updateSessionCountdowns() {
+        const cards = document.querySelectorAll('.session-card');
+        const now = new Date().getTime();
+        cards.forEach(card => {
+            const expires = card.getAttribute('data-expires');
+            const label = card.querySelector('.session-remaining');
+            if (!expires || !label) return;
+
+            const expiresTime = new Date(expires).getTime();
+            const diffMs = expiresTime - now;
+
+            if (diffMs <= 0) {
+                label.textContent = 'Expired';
+                return;
+            }
+
+            const minutes = Math.floor(diffMs / 60000);
+            const seconds = Math.floor((diffMs % 60000) / 1000);
+            if (minutes > 59) {
+                const hours = Math.floor(minutes / 60);
+                const remMinutes = minutes % 60;
+                label.textContent = `${hours}h ${remMinutes}m left`;
+            } else {
+                label.textContent = `${minutes}m ${seconds}s left`;
+            }
+        });
+    }
+    updateSessionCountdowns();
+    setInterval(updateSessionCountdowns, 1000);
+
+    // Simple classroom filter for table and cards
+    const classroomFilter = document.getElementById('classroomFilter');
+    if (classroomFilter) {
+        classroomFilter.addEventListener('change', function () {
+            const value = this.value;
+            const rows = document.querySelectorAll('#sessionsTable tbody tr');
+            const cards = document.querySelectorAll('.session-card');
+
+            rows.forEach(row => {
+                const cls = row.getAttribute('data-classroom');
+                row.style.display = !value || value === cls ? '' : 'none';
+            });
+            cards.forEach(card => {
+                const cls = card.getAttribute('data-classroom');
+                card.style.display = !value || value === cls ? '' : 'none';
+            });
+        });
+    }
+
+    // Handle close session forms via fetch to avoid JSON page
+    document.querySelectorAll('.close-session-form').forEach(form => {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const actionUrl = this.getAttribute('action');
+            const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Closing...';
+
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to close session');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Unable to close session. Please try again.');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="bi bi-x-circle me-1"></i> Close Session';
+                });
+        });
     });
 </script>
 {% endblock %}

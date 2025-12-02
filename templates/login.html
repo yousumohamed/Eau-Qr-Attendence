@@ -5,130 +5,198 @@
 
 {% block extra_css %}
 <style>
-    .login-container {
-        max-width: 400px;
-        margin: 60px auto;
+    body {
+        background: #f5f7fb;
+    }
+
+    .login-wrapper {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        padding: 2rem 1rem;
     }
 
     .login-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 1100px;
+        background: #fff;
+        border-radius: 24px;
         overflow: hidden;
+        box-shadow: 0 20px 60px rgba(13, 110, 253, 0.15);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
 
-    .login-header {
-        background: linear-gradient(135deg, var(--primary-color), #0a58ca);
-        padding: 30px;
-        text-align: center;
-        color: white;
+    .login-hero {
+        background: linear-gradient(135deg, #0d6efd, #083b9a);
+        color: #fff;
+        padding: 3rem;
+        position: relative;
     }
 
-    .login-icon {
-        font-size: 3rem;
-        margin-bottom: 10px;
-        opacity: 0.9;
+    .login-hero::after {
+        content: '';
+        position: absolute;
+        inset: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        pointer-events: none;
     }
 
-    .login-body {
-        padding: 40px 30px;
-        background: white;
+    .login-hero img {
+        max-width: 180px;
+        height: auto;
+    }
+
+    .login-hero h2 {
+        font-weight: 600;
+    }
+
+    .login-form-section {
+        padding: 3rem;
+    }
+
+    .back-link {
+        font-size: 0.9rem;
+        color: #0d6efd;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 500;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
     }
 
     .form-floating>.form-control:focus~label,
     .form-floating>.form-control:not(:placeholder-shown)~label {
-        color: var(--primary-color);
+        color: #0d6efd;
     }
 
     .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
     }
 
-    .btn-login {
-        padding: 12px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        margin-top: 20px;
-    }
-
-    .login-footer {
-        text-align: center;
-        margin-top: 20px;
+    .remember-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         font-size: 0.9rem;
-        color: #6c757d;
+    }
+
+    .login-submit {
+        background: #0d6efd;
+        border: none;
+        padding: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .login-submit:hover {
+        background: #0b5ed7;
+    }
+
+    @media (max-width: 767px) {
+        .login-hero {
+            display: none;
+        }
+
+        .login-wrapper {
+            min-height: auto;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <i class="bi bi-person-circle login-icon"></i>
-                <h4 class="mb-0">Welcome Back</h4>
-                <p class="mb-0 opacity-75">Sign in to your account</p>
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-hero d-flex flex-column justify-content-between">
+            <div>
+                <img src="{% static 'assets/assets/header.png' %}" alt="QR Attendance Logo" class="mb-4">
+                <h2 class="mb-3">Track Attendance with Confidence</h2>
+                <p class="opacity-75">
+                    Simple QR-based attendance for teachers, students, and administrators. Secure, fast, and in real time.
+                </p>
             </div>
-            <div class="login-body">
-                {% if form.errors %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-circle-fill me-2"></i>
-                    Invalid username or password.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endif %}
-
-                {% if next %}
-                {% if user.is_authenticated %}
-                <div class="alert alert-warning">
-                    <i class="bi bi-shield-lock-fill me-2"></i>
-                    Your account doesn't have access to this page. To proceed, please login with an account that has
-                    access.
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle-fill me-2"></i>
-                    Please login to see this page.
-                </div>
-                {% endif %}
-                {% endif %}
-
-                <form method="post" action="{% url 'login' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ next }}">
-
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
-                            required autofocus>
-                        <label for="username"><i class="bi bi-person me-2"></i>Username</label>
+            <div class="mt-5">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <h5 class="mb-0">Need help?</h5>
+                        <small class="opacity-75">Contact your administrator for login assistance.</small>
                     </div>
-
-                    <div class="form-floating mb-4">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Password"
-                            required>
-                        <label for="password"><i class="bi bi-key me-2"></i>Password</label>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-login">
-                            Sign In <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </form>
-
-                <div class="login-footer">
-                    <p class="mb-1">Don't have an account?</p>
-                    <a href="#" class="text-decoration-none" data-bs-toggle="tooltip"
-                        title="Please contact your administrator">Contact Administrator</a>
                 </div>
             </div>
         </div>
 
-        <div class="text-center mt-4 text-muted">
-            <small>
-                <i class="bi bi-shield-check me-1"></i> Secure Login System
-            </small>
+        <div class="login-form-section">
+            <a href="{% url 'dashboard' %}" class="back-link mb-4">
+                <i class="bi bi-arrow-left"></i> Back to home
+            </a>
+            <h1 class="fw-bold mb-2">Welcome back</h1>
+            <p class="text-muted mb-4">Enter your credentials to sign in to your account</p>
+
+            {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                Invalid username or password.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-warning">
+                <i class="bi bi-shield-lock-fill me-2"></i>
+                Your account doesn't have access to this page. Please login with an account that has permission.
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Please login to continue.
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" class="mt-4">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" required autofocus>
+                    <label for="username"><i class="bi bi-envelope me-2"></i>Email or username</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                    <label for="password"><i class="bi bi-lock me-2"></i>Password</label>
+                </div>
+
+                <div class="remember-row mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="on" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="#" class="text-decoration-none small text-primary">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary login-submit w-100">
+                    Sign in <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="text-muted small mt-4">
+                <i class="bi bi-shield-check me-1"></i> Secure login powered by QR Attendance.
+            </div>
         </div>
     </div>
 </div>
@@ -136,10 +204,15 @@
 
 {% block extra_js %}
 <script>
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
+    const rememberCheckbox = document.getElementById('rememberMe');
+    if (rememberCheckbox) {
+        rememberCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                this.setAttribute('checked', 'checked');
+            } else {
+                this.removeAttribute('checked');
+            }
+        });
+    }
 </script>
 {% endblock %}

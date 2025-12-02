@@ -3,7 +3,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count
+from django.db.models import Count, Q, F, IntegerField, ExpressionWrapper
 from datetime import datetime, timedelta
 
 from .models import Student, Teacher, Classroom, Session, AttendanceRecord
@@ -314,14 +314,21 @@ def student_dashboard(request):
 
     # Calculate stats
     total_attendance = records.count()
-    attendance_percentage = 100
-    
+    total_sessions = Session.objects.filter(
+        classroom__in=student.classrooms.all()
+    ).distinct().count()
+
+    attendance_percentage = 0
+    if total_sessions > 0:
+        attendance_percentage = round((total_attendance / total_sessions) * 100)
+
     context = {
         'student': student,
         'recent_records': records[:10],
         'active_sessions': active_sessions,
         'total_attendance': total_attendance,
         'attendance_percentage': attendance_percentage,
+        'total_sessions': total_sessions,
     }
     return render(request, 'student_dashboard.html', context)
 
@@ -332,9 +339,15 @@ def teacher_dashboard(request):
         from django.contrib.auth.views import redirect_to_login
         return redirect_to_login(request.get_full_path())
     
-    # Get teacher sessions
+    # Get teacher sessions with stats
     sessions = Session.objects.all().annotate(
-        attendance_count=Count('attendance_records')
+        attendance_count=Count('attendance_records', distinct=True),
+        classroom_size=Count('classroom__students', distinct=True),
+    ).annotate(
+        absent_count=ExpressionWrapper(
+            F('classroom_size') - F('attendance_count'),
+            output_field=IntegerField()
+        )
     ).order_by('-created_at')
     
     # Filter by teacher if not admin
@@ -343,13 +356,36 @@ def teacher_dashboard(request):
     
     # Get classrooms for session creation
     classrooms = Classroom.objects.filter(is_active=True)
-    
+
+    # Aggregate stats for dashboard
+    teacher_classrooms = classrooms
+    if not request.user.is_staff and hasattr(request.user, 'teacher_profile'):
+        # Only classrooms where this teacher has (or had) sessions
+        teacher_classrooms = Classroom.objects.filter(
+            sessions__teacher=request.user.teacher_profile,
+            is_active=True
+        ).distinct()
+
+    total_students_in_classes = Student.objects.filter(
+        classrooms__in=teacher_classrooms,
+        is_active=True
+    ).distinct().count()
+
+    todays_sessions_count = sessions.filter(
+        session_date=datetime.today().date()
+    ).count()
+
+    total_sessions_count = sessions.count()
+
     context = {
         'sessions': sessions[:20],
         'active_sessions': sessions.filter(is_active=True),
         'classrooms': classrooms,
+        'total_students_in_classes': total_students_in_classes,
+        'todays_sessions_count': todays_sessions_count,
+        'total_sessions_count': total_sessions_count,
     }
-    
+
     return render(request, 'teacher_dashboard.html', context)
 
 
@@ -372,12 +408,20 @@ def session_qr_view(request, pk):
     
     # Get attendance records
     attendance_records = session.attendance_records.all().select_related('student')
-    
+
+    # Students who belong to this classroom but have not yet marked attendance
+    absent_students = session.classroom.students.exclude(
+        attendance_records__session=session
+    ).distinct()
+
     context = {
         'session': session,
         'qr_url': qr_url,
         'attendance_records': attendance_records,
         'attendance_count': attendance_records.count(),
+        'absent_students': absent_students,
+        'total_class_size': session.classroom.students.count(),
+        'absent_count': absent_students.count(),
     }
     
     return render(request, 'session_qr.html', context)
@@ -420,9 +464,10 @@ def reports_view(request):
         records = records.filter(session__teacher=request.user.teacher_profile)
     
     # Get sessions and students for filter dropdowns
-    sessions = Session.objects.all().order_by('-created_at')[:50]
+    sessions_qs = Session.objects.all()
     if not request.user.is_staff and hasattr(request.user, 'teacher_profile'):
-        sessions = sessions.filter(teacher=request.user.teacher_profile)
+        sessions_qs = sessions_qs.filter(teacher=request.user.teacher_profile)
+    sessions = sessions_qs.order_by('-created_at')[:50]
     
     students = Student.objects.filter(is_active=True).order_by('name')
     

@@ -4,6 +4,22 @@ from django.utils import timezone
 from datetime import timedelta
 import uuid
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+class UserProfile(models.Model):
+    """Additional profile information for any Django user (admin, teacher, student)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='users/avatars/', blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self):
+        return f"{self.user.get_username()} Profile"
 
 
 class Student(models.Model):
@@ -133,3 +149,12 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.student.name} - {self.session.title} ({self.marked_at.strftime('%Y-%m-%d %H:%M')})"
+
+
+@receiver(post_save, sender=User)
+def ensure_user_profile(sender, instance, created, **kwargs):
+    """Automatically create or ensure a profile exists for each user."""
+    if created:
+        UserProfile.objects.create(user=instance)
+    else:
+        UserProfile.objects.get_or_create(user=instance)
