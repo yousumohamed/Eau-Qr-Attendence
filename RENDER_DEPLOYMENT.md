@@ -27,6 +27,7 @@
 Click "Advanced" and add these environment variables:
 
 ```
+PYTHON_VERSION=3.11.8
 SECRET_KEY=your-secret-key-here-make-it-long-and-random
 DEBUG=False
 DATABASE_URL=[paste the Internal Database URL from step 2]
@@ -39,12 +40,13 @@ CSRF_TRUSTED_ORIGINS=https://qr-attendance.onrender.com
 - Wait 5-10 minutes for first deployment
 - Your app will be live at: `https://qr-attendance.onrender.com`
 
-### 6. Create Admin User
-After deployment, go to the Render dashboard:
-- Click on your web service
-- Go to "Shell" tab
-- Run: `python manage.py createsuperuser`
-- Follow the prompts
+### 6. Admin User
+The admin user is created automatically during the build process. You can log in with:
+- **Username**: sadiq
+- **Password**: sadiq123
+- **Email**: sadiq@gmail.com
+
+*(Note: You can change this password later in the Django admin panel)*
 
 ## Done! 🎉
 
