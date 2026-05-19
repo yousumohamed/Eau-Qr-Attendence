@@ -150,7 +150,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise configuration for static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'qr_attendance.storage.CustomWhiteNoiseStorage'
 WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = 'media/'
